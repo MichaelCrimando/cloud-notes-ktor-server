@@ -24,3 +24,9 @@ dependencies {
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
 }
+
+ktor {
+    fatJar {
+        archiveFileName.set("cloud-notes-ktor-server.jar")
+    }
+}

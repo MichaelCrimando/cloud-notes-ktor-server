@@ -1,5 +1,12 @@
 # cloud-notes
 
+
+## To run:
+docker build -t cloud-notes-ktor-server .
+docker run -p 8080:8080 cloud-notes-ktor-server
+http://localhost:8080/
+http://localhost:8080/health
+
 This project was created using the [Ktor Project Generator](https://start.ktor.io).
 
 Here are some useful links to get you started:

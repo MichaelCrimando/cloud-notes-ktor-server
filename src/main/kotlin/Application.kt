@@ -44,3 +44,109 @@ fun main(args: Array<String>) {
 fun Application.module() {
     configureRouting()
 }
+
+
+/**
+* Endpoints:
+* GET /api/notes - Get all notes
+* GET /api/notes/{id} - Get specific note
+* POST /api/notes - Create new note
+* PUT /api/notes/{id} - Update existing note
+* DELETE /api/notes/{id} - Delete note
+* @return a list containing all the notes.
+*/
+fun Application.configureRouting() {
+    // Configure JSON serialization
+    install(ContentNegotiation) {
+        json(Json {
+            prettyPrint = true
+            isLenient = true
+            ignoreUnknownKeys = true
+        })
+    }
+
+    // TODO: In-memory storage for demo (replace with database later)
+    val notes = mutableMapOf<Int, Note>()
+    var nextId = 1
+
+    routing {
+        get("/") {
+            call.respondText("Notes API Mainframe Running!")
+        }
+        
+        get("/health") {
+            call.respondText("OK")
+        }
+
+        // Notes API endpoints
+        route("/api/notes") {
+            
+            // GET all notes
+            get {
+                call.respond(notes.values.toList())
+            }
+            
+            // GET specific note by ID
+            get("/{id}") {
+                val id = call.parameters["id"]?.toIntOrNull() 
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid note ID")
+                
+                val note = notes[id] 
+                    ?: return@get call.respond(HttpStatusCode.NotFound, "Note not found")
+                
+                call.respond(note)
+            }
+            
+            // POST - Create new note
+            post {
+                val request = call.receive<CreateNoteRequest>()
+                val newNote = Note(
+                    title = request.title,
+                    content = request.content,
+                    timestamp = System.currentTimeMillis(),
+                    color = request.color,
+                    id = nextId
+                )
+                
+                notes[nextId] = newNote
+                nextId++
+                
+                call.respond(HttpStatusCode.Created, newNote)
+            }
+            
+            // PUT - Update existing note
+            put("/{id}") {
+                val id = call.parameters["id"]?.toIntOrNull()
+                    ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid note ID")
+                
+                if (!notes.containsKey(id)) {
+                    return@put call.respond(HttpStatusCode.NotFound, "Note not found")
+                }
+                
+                val request = call.receive<CreateNoteRequest>()
+                val updatedNote = Note(
+                    title = request.title,
+                    content = request.content,
+                    timestamp = System.currentTimeMillis(), // Update timestamp
+                    color = request.color,
+                    id = id
+                )
+                
+                notes[id] = updatedNote
+                call.respond(updatedNote)
+            }
+            
+            // DELETE - Delete note
+            delete("/{id}") {
+                val id = call.parameters["id"]?.toIntOrNull()
+                    ?: return@delete call.respond(HttpStatusCode.BadRequest, "Invalid note ID")
+                
+                if (notes.remove(id) != null) {
+                    call.respond(HttpStatusCode.NoContent)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Note not found")
+                }
+            }
+        }
+    }
+}
